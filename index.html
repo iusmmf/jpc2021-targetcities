@@ -1,0 +1,121 @@
+
+mapboxgl.accessToken = 'pk.eyJ1IjoibnlhbWF0byIsImEiOiJja2Y4dzNkOW8wY3MwMnFvM29iNnJzNzVzIn0.GHlHwu3r5YjKBU3qAKvccQ';
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox-map-design/ckhqrf2tz0dt119ny6azh975y',
+    center: [139.767147100751, 35.681382816725225],
+    zoom: 8
+});
+
+map.on('load', function () {
+    // Add a source for the city polygons.
+    map.addSource('cities', {
+        type: 'vector',
+        url: 'mapbox://nyamato.0mw85nir'
+    });
+
+    // Add a layer showing the city polygons.
+    map.addLayer({
+        'id': 'jpc_city2021',
+        'type': 'fill',
+        'source': 'cities',
+        'source-layer': 'jpc_city2021-69kg1v',
+        'paint': {
+            'fill-color': ['match', ['get', 'タイプ'], // get the property
+                 '政令指定', 'rgba(2,195,154,.5)', // if '政令指定都市' then green
+                 '県庁', 'rgba(255,190,11,.5)',    // if '県庁所在地' then orange 
+                 'その他', 'rgba(58,134,255,.5)',  // if 'その他' then blue 
+                 '新規', 'rgba(58,134,255,.5)',   // if '新規' then bule
+                 '23区', 'rgba(255,0,110,.5)',    // if '23区' then red 
+                 'white']                         // white otherwise
+            }
+    });
+    // Add a black outline around the polygon.
+    map.addLayer({
+        'id': 'outline',
+        'type': 'line',
+        'source': 'cities',
+        'source-layer': 'jpc_city2021-69kg1v',
+        'layout': {},
+        'paint': {
+            'line-color': '#ffffff',
+            'line-width': 0.5
+        }
+    });
+
+    map.addSource('mapbox-dem', {
+        'type': 'raster-dem',
+        'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        'tileSize': 512,
+        'maxzoom': 14
+        });
+    // add the DEM source as a terrain layer with exaggerated height
+    map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+
+    // add the DEM source as a terrain layer with exaggerated height
+    map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+    
+    map.addLayer({
+        'id': 'sky',
+        'type': 'sky',
+        'paint': {
+        // set up the sky layer to use a color gradient
+        'sky-type': 'gradient',
+        // the sky will be lightest in the center and get darker moving radially outward
+        // this simulates the look of the sun just below the horizon
+        'sky-gradient': [
+            'interpolate',
+            ['linear'],
+            ['sky-radial-progress'],
+            0.8,
+            'rgba(135, 206, 235, 1.0)',
+            1,
+            'rgba(0,0,0,0.1)'
+        ],
+        'sky-gradient-center': [0, 0],
+        'sky-gradient-radius': 90,
+        'sky-opacity': [
+            'interpolate',
+            ['exponential', 0.1],
+            ['zoom'],
+            5,
+            0,
+            22,
+            1
+        ]
+        }
+        });
+
+    // When a click event occurs on a feature in the cities layer, open a popup at the
+    // location of the click, with description HTML from its properties.
+    map.on('click', 'jpc_city2021', function (e) {
+        new mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(e.features[0].properties["都道府"] + e.features[0].properties.name1)
+            .addTo(map);
+    });
+
+    // Change the cursor to a pointer when the mouse is over the cities layer.
+    map.on('mouseenter', 'jpc_city2021', function () {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+
+    // Change it back to a pointer when it leaves.
+    map.on('mouseleave', 'jpc_city2021', function () {
+        map.getCanvas().style.cursor = '';
+    });
+
+    // Legend
+    var Legend = document.getElementById('legend');
+    Legend.style.display = 'block';
+
+});
+
+// Add zoom and rotation controls to the map.
+map.addControl(new mapboxgl.NavigationControl());
+
+// Add a fullscreen control to a map
+map.addControl(new mapboxgl.FullscreenControl());
+
+
